@@ -77,19 +77,58 @@ if not st.session_state.authenticated:
     st.stop()
 
 # ============================================================
-# HEADER / LANDING STYLE
+# LANDING PAGE HEADER (Fixed for proper alignment)
 # ============================================================
 
-col_title, col_meta = st.columns([3, 2])
+st.markdown(
+    f"""
+    <style>
+        .landing-container {{
+            padding-left: 2rem;   /* Adds space so header isn't cut */
+            padding-right: 2rem;
+        }}
+        .main-title {{
+            font-size: 2.4rem;
+            font-weight: 700;
+            color: {PRIMARY_COLOR};
+            padding-top: 0.5rem;
+        }}
+        .subtitle {{
+            font-size: 1.05rem;
+            color: #444;
+            margin-top: -5px;
+            margin-bottom: 0.7rem;
+        }}
+        .tag-pill {{
+            display: inline-block;
+            padding: 0.22rem 0.65rem;
+            border-radius: 999px;
+            background-color: {LIGHT_BG};
+            border: 1px solid #E0E7FF;
+            font-size: 0.78rem;
+            color: #444;
+            margin-right: 0.35rem;
+            margin-bottom: 0.35rem;
+        }}
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+# Add a wrapper so Streamlit shifts content away from sidebar safely
+st.markdown('<div class="landing-container">', unsafe_allow_html=True)
+
+# Fix column ratio: give title more room
+col_title, col_meta = st.columns([4, 3])
 
 with col_title:
     st.markdown('<div class="main-title">Churnpredict.ai</div>', unsafe_allow_html=True)
     st.markdown(
         """
         <div class="subtitle">
-        Predict <b>2-month-ahead churn risk</b> from panel spend data.<br/>
-        Upload your own CSV or use realistic demo datasets across Manufacturing, Retail,
-        B2B SaaS, Telecom, and more.
+            Predict <b>2-month-ahead churn risk</b> from panel spend data.<br/>
+            Upload your own CSV or explore demo datasets across Manufacturing, Retail,
+            B2B SaaS, Telecom, and more.
         </div>
         """,
         unsafe_allow_html=True,
@@ -100,6 +139,7 @@ with col_title:
         <span class="tag-pill">Time-series features</span>
         <span class="tag-pill">Soft churn detection</span>
         <span class="tag-pill">Portfolio & vendor curves</span>
+        <span class="tag-pill">Flexible training</span>
         """,
         unsafe_allow_html=True,
     )
@@ -107,19 +147,26 @@ with col_title:
 with col_meta:
     st.markdown(
         f"""
-        <div style="background-color:{LIGHT_BG};padding:0.7rem 0.9rem;
-                    border-radius:0.75rem;border:1px solid #E0E7FF;">
+        <div style="
+            background-color:{LIGHT_BG};
+            padding:1rem 1.1rem;
+            border-radius:0.75rem;
+            border:1px solid #E0E7FF;
+            line-height:1.45;
+        ">
             <b>How to use:</b><br/>
             1. Pick a demo dataset or upload your own CSV.<br/>
             2. The app builds churn labels and features.<br/>
             3. A logistic regression model is fit (with flexible handling of small datasets).<br/>
-            4. Explore churn risk at portfolio, vendor, and company levels.
+            4. Explore churn risk easily at portfolio, vendor, and company levels.
         </div>
         """,
         unsafe_allow_html=True,
     )
 
+st.markdown("</div>", unsafe_allow_html=True)
 st.markdown("---")
+
 
 # ============================================================
 # HELPERS
