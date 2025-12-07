@@ -79,29 +79,22 @@ def build_features(df):
     df = df.sort_values(["company_id","vendor_id","date"]).copy()
     df["date"] = pd.to_datetime(df["date"])
 
-    # Rolling stats
-    df["roll1"] = df.groupby(["company_id","vendor_id"])["monthly_spend"].shift(1)
-    df["roll2_mean"] = (
-        df.groupby(["company_id","vendor_id"])["monthly_spend"]
-        .shift(1).rolling(2).mean().reset_index(level=[0,1], drop=True)
-    )
-    df["roll3_mean"] = (
-        df.groupby(["company_id","vendor_id"])["monthly_spend"]
-        .shift(1).rolling(3).mean().reset_index(level=[0,1], drop=True)
-    )
-    df["roll3_std"] = (
-        df.groupby(["company_id","vendor_id"])["monthly_spend"]
-        .shift(1).rolling(3).std().reset_index(level=[0,1], drop=True)
-    )
+    # Group object for convenience
+    g = df.groupby(["company_id", "vendor_id"])["monthly_spend"]
+
+    # Rolling stats using transform (no reset_index needed)
+    df["roll1"] = g.transform(lambda s: s.shift(1))
+    df["roll2_mean"] = g.transform(lambda s: s.shift(1).rolling(2).mean())
+    df["roll3_mean"] = g.transform(lambda s: s.shift(1).rolling(3).mean())
+    df["roll3_std"] = g.transform(lambda s: s.shift(1).rolling(3).std())
 
     # Growth
     df["mom_growth"] = (df["monthly_spend"] - df["roll1"]) / df["roll1"]
     df["qoq_growth"] = (df["monthly_spend"] - df["roll3_mean"]) / df["roll3_mean"]
 
-    # Trend slope
-    df["slope_3m"] = (
-        df.groupby(["company_id","vendor_id"])["monthly_spend"]
-        .shift(1).rolling(3).apply(compute_slope, raw=False)
+    # Trend slope over last 3 months (on lagged spend)
+    df["slope_3m"] = g.transform(
+        lambda s: s.shift(1).rolling(3).apply(compute_slope, raw=False)
     )
 
     # Volatility score
@@ -117,10 +110,13 @@ def build_features(df):
     else:
         df["size_norm_spend"] = df["monthly_spend"]
 
-    df = df.replace([np.inf,-np.inf], np.nan).fillna(0)
-    df = df.dropna(subset=["roll3_mean","roll3_std","slope_3m"]).copy()
+    # Clean inf/NaN
+    df = df.replace([np.inf, -np.inf], np.nan).fillna(0)
 
-    # One-hot encoding for categoricals
+    # Keep only rows where core features exist
+    df = df.dropna(subset=["roll3_mean", "roll3_std", "slope_3m"]).copy()
+
+    # One-hot encoding for categoricals (only if present)
     categorical_columns = [
         c for c in ["company_region","company_size","vendor_contract_type","vendor_category"]
         if c in df.columns
@@ -128,6 +124,7 @@ def build_features(df):
     df = pd.get_dummies(df, columns=categorical_columns)
 
     return df
+
 
 
 def train_model(features_df):
