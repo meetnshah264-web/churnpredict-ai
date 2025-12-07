@@ -397,9 +397,12 @@ data_choice = st.sidebar.selectbox(
         "Periodic churn",
         "Region volatility",
         "Vendor lifecycle",
-        "Large demo (100 companies, 36 months)",
         "Upload my own CSV",
     ],
+)
+st.sidebar.caption(
+    "🔒 Your uploaded data is used only in your session; "
+    "we do not store or reuse it to train a shared model."
 )
 
 demo_files = {
@@ -602,6 +605,14 @@ with tab_about:
         - **Portfolio curve:** average churn probability across all active relationships.
         - **Vendor curve:** average churn probability for a selected vendor over time.
         - **Customer table:** average churn risk by company, sortable for targeting / triage.
+
+        ### 7. Data privacy in this prototype
+
+        - Uploaded CSVs are processed **in-memory** for the duration of your session.
+        - We do **not** persist your raw data to a database or reuse it to train a
+          shared global model.
+        - All churn labels, features, and model fits are scoped to your session only.
+
 
         This framework is intentionally modular so it can be extended with:
         - Alternative churn definitions,
