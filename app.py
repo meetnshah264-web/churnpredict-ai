@@ -232,39 +232,63 @@ def vendor_churn_curve(scored_df: pd.DataFrame, vendor_id: str) -> pd.DataFrame:
 # ------------------------------------------------------------
 
 # ------------------------------------------------------------
-# MAIN APP – DATA SOURCE SELECTION
+# DATA SOURCE SELECTION – MULTIPLE DEMO DATASETS
 # ------------------------------------------------------------
 
-st.sidebar.header("Data source")
+st.sidebar.header("Choose data source")
 
-data_choice = st.sidebar.radio(
-    "Choose data source:",
-    ["Use demo dataset (from repo)", "Upload my own CSV"],
-    index=0
+data_choice = st.sidebar.selectbox(
+    "Select dataset:",
+    [
+        "Demo (generic)",
+        "Manufacturing",
+        "Retail",
+        "B2B SaaS",
+        "Telecom",
+        "Periodic churn",
+        "Region volatility",
+        "Vendor lifecycle",
+        "Upload my own CSV"
+    ]
 )
 
 df_raw = None
 
-if data_choice == "Use demo dataset (from repo)":
-    st.sidebar.markdown("Using **demo_churn_data.csv** bundled with the app.")
+# Map each choice to a demo file
+demo_files = {
+    "Demo (generic)": "demo_churn_data.csv",
+    "Manufacturing": "demo_manufacturing.csv",
+    "Retail": "demo_retail.csv",
+    "B2B SaaS": "demo_b2b_saas.csv",
+    "Telecom": "demo_telecom.csv",
+    "Periodic churn": "demo_periodic_churn.csv",
+    "Region volatility": "demo_region_volatility.csv",
+    "Vendor lifecycle": "demo_vendor_cycles.csv",
+}
+
+if data_choice != "Upload my own CSV":
+    file_name = demo_files[data_choice]
     try:
-        df_raw = pd.read_csv("demo_churn_data.csv")
-    except FileNotFoundError:
-        st.error(
-            "demo_churn_data.csv not found in the repo.\n\n"
-            "Please make sure the file is present at the project root."
-        )
+        df_raw = pd.read_csv(file_name)
+        st.sidebar.success(f"Loaded {file_name} successfully.")
+    except Exception as e:
+        st.sidebar.error(f"❗ Could not load {file_name}: {e}")
         st.stop()
 else:
-    uploaded = st.sidebar.file_uploader("Upload CSV", type=["csv"])
+    uploaded = st.sidebar.file_uploader("Upload your CSV", type=["csv"])
     if uploaded is None:
         st.info("⬅️ Upload a CSV file in the sidebar to begin.")
         st.stop()
     try:
         df_raw = pd.read_csv(uploaded)
+        st.sidebar.success("Uploaded CSV successfully.")
     except Exception as e:
-        st.error(f"Error reading CSV: {e}")
+        st.error(f"Error reading uploaded CSV: {e}")
         st.stop()
+
+# Ensure date is datetime
+df_raw["date"] = pd.to_datetime(df_raw["date"])
+
 
 
 required_cols = ["company_id", "vendor_id", "date", "monthly_spend"]
