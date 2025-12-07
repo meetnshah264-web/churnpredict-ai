@@ -133,19 +133,31 @@ def train_model(features_df: pd.DataFrame):
     """
     Train logistic regression.
 
-    If we don't have both classes in the target, show error and return Nones.
+    If the target has only one class (all 0s or all 1s),
+    we synthetically flip one row to create a second class
+    so that the model can still train and the app does not break.
     """
-    y = features_df["future_soft_churn_2m"]
+    y = features_df["future_soft_churn_2m"].copy()
 
-    # Need at least 2 classes in the target
+    # If only one class, synthetically create a churn example
     if y.nunique() < 2:
-        st.error(
-            "❗ Not enough churn events to train a model.\n\n"
-            f"`future_soft_churn_2m` contains only one class: {int(y.unique()[0])}.\n\n"
-            "Please upload a larger or more volatile dataset where at least some "
-            "relationships show soft churn."
+        unique_val = int(y.unique()[0])
+        st.warning(
+            "⚠️ Not enough true churn events in this dataset to train a model.\n\n"
+            f"`future_soft_churn_2m` contains only one class: {unique_val}.\n\n"
+            "For demonstration purposes, we will synthetically mark one row as a "
+            "churn event (1) so that the model can still fit and produce relative "
+            "risk scores. For production use, please provide more history or a "
+            "dataset that includes at least a few churn cases."
         )
-        return None, None, None, None
+
+        # Choose the row with the largest negative drop (if available),
+        # otherwise just flip the first row.
+        if "pct_change_vs_roll2" in features_df.columns:
+            idx = features_df["pct_change_vs_roll2"].idxmin()
+            y.loc[idx] = 1
+        else:
+            y.iloc[0] = 1
 
     drop_cols = [
         "company_id", "vendor_id", "date", "monthly_spend",
@@ -157,7 +169,7 @@ def train_model(features_df: pd.DataFrame):
 
     X = features_df[feature_columns]
 
-    # Guard: if no usable features, bail
+    # If we somehow have no usable feature columns, bail out gracefully
     if X.shape[1] == 0:
         st.error("No feature columns available to train the model.")
         return None, None, None, None
@@ -168,7 +180,12 @@ def train_model(features_df: pd.DataFrame):
     model = LogisticRegression(max_iter=1000, class_weight="balanced")
     model.fit(X_scaled, y)
 
-    auc = roc_auc_score(y, model.predict_proba(X_scaled)[:, 1])
+    # In-sample AUC (may be noisy on tiny datasets, but fine for demo)
+    try:
+        auc = roc_auc_score(y, model.predict_proba(X_scaled)[:, 1])
+    except Exception:
+        auc = None
+
     return model, scaler, feature_columns, auc
 
 
