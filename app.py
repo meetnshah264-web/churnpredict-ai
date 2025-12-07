@@ -214,19 +214,41 @@ def vendor_churn_curve(scored_df: pd.DataFrame, vendor_id: str) -> pd.DataFrame:
 # MAIN APP
 # ------------------------------------------------------------
 
-st.sidebar.header("Upload CSV")
-uploaded = st.sidebar.file_uploader("Choose a CSV file", type=["csv"])
+# ------------------------------------------------------------
+# MAIN APP – DATA SOURCE SELECTION
+# ------------------------------------------------------------
 
-if uploaded is None:
-    st.info("⬅️ Upload a CSV file in the sidebar to begin.")
-    st.stop()
+st.sidebar.header("Data source")
 
-# Read CSV safely (handle ParserError)
-try:
-    df_raw = pd.read_csv(uploaded)
-except Exception as e:
-    st.error(f"Error reading CSV: {e}")
-    st.stop()
+data_choice = st.sidebar.radio(
+    "Choose data source:",
+    ["Use demo dataset (from repo)", "Upload my own CSV"],
+    index=0
+)
+
+df_raw = None
+
+if data_choice == "Use demo dataset (from repo)":
+    st.sidebar.markdown("Using **demo_churn_data.csv** bundled with the app.")
+    try:
+        df_raw = pd.read_csv("demo_churn_data.csv")
+    except FileNotFoundError:
+        st.error(
+            "demo_churn_data.csv not found in the repo.\n\n"
+            "Please make sure the file is present at the project root."
+        )
+        st.stop()
+else:
+    uploaded = st.sidebar.file_uploader("Upload CSV", type=["csv"])
+    if uploaded is None:
+        st.info("⬅️ Upload a CSV file in the sidebar to begin.")
+        st.stop()
+    try:
+        df_raw = pd.read_csv(uploaded)
+    except Exception as e:
+        st.error(f"Error reading CSV: {e}")
+        st.stop()
+
 
 required_cols = ["company_id", "vendor_id", "date", "monthly_spend"]
 missing = [c for c in required_cols if c not in df_raw.columns]
