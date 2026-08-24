@@ -1,7 +1,6 @@
 # 📄 ChurnPredict — Customer Churn Probability Research & Forecasting Model
 
 **Author:** Meet Shah
-**Role:** Data QA Specialist, YipitData (India)
 **Live demo:** [churnpredict-ai.streamlit.app](https://churnpredict-ai-jzetwdmeabfrsfysdcr9ag.streamlit.app/) *(PW: `churn2025` — click "get this app back up" if it's asleep)*
 
 > Part of ongoing personal development toward quantitative research and data science — applying statistical and forecasting methods to business, economic, and financial datasets.
